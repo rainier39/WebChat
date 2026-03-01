@@ -40,20 +40,39 @@ session_start([
 // Set a random name for the user if there isn't one (I.E. first page load).
 $_SESSION["name"] = $_SESSION["name"] ?? "user" . rand(1000, 9999);
 
+$errors = "";
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  // Note lack of error handling, lack of bounds checking. TODO
   if (isset($_POST["message"]) and isset($_POST["name"])) {
-    if ($_SESSION["name"] != $_POST["name"]) $_SESSION["name"] = $_POST["name"];
-    $db->query("INSERT INTO `messages` (content, mtime, name) VALUES ('" . $db->real_escape_string($_POST["message"]) . "', '" . time() . "', '" . $db->real_escape_string($_POST["name"]) . "')");
+    if (strlen($_POST["message"]) < 1) {
+      $errors .= "<div class='error'>Your message cannot be blank.</div>";
+    }
+    elseif (strlen($_POST["message"]) > 2048) {
+      $errors .= "<div class='error'>Your message is too long.</div>";
+    }
+    if (strlen($_POST["name"]) < 1) {
+      $errors .= "<div class='error'>Your name cannot be blank.</div>";
+    }
+    elseif (strlen($_POST["name"]) > 32) {
+      $errors .= "<div class='error'>Your name is too long.</div>";
+    }
+    if ($errors == "") {
+      // Set the user's name if it's different from their current one.
+      if ($_SESSION["name"] != $_POST["name"]) $_SESSION["name"] = $_POST["name"];
+      if ($db->query("INSERT INTO `messages` (content, mtime, name) VALUES ('" . $db->real_escape_string($_POST["message"]) . "', '" . time() . "', '" . $db->real_escape_string($_POST["name"]) . "')") === true) {
+        // Delete old messages.
+        $db->query("DELETE FROM `messages` WHERE `id`<=" . $db->insert_id . "-" . (int)$config["maxMessages"]);
+      }
+    }
   }
 }
 
 $content = "";
 
-$result = $db->query("SELECT * FROM `messages` ORDER BY `id` DESC LIMIT 50");
+$result = $db->query("SELECT * FROM `messages` ORDER BY `id` DESC LIMIT " . (int)$config["maxMessages"]);
 
 while ($r = $result->fetch_assoc()) {
-  // Add the content backwards because we're going through the 50 newest messages in reverse order (DESC).
+  // Add the content backwards because we're going through the n newest messages in reverse order (DESC).
   $content = "<div class='msg'>" . htmlspecialchars($r["name"]) . ": " . htmlspecialchars($r["content"]) . "</div>" . $content;
 }
 
@@ -63,20 +82,23 @@ echo("<!DOCTYPE html>
 <html lang='en-US'>
  <head>
   <meta charset='UTF-8'>
-  <title>WebChat</title>
+  <title>" . htmlspecialchars($config["chatName"]) . "</title>
   <meta name='viewport' content='width=device-width,initial-scale=1'>
   <link rel='stylesheet' href='chat.css'>
   <script src='chat.js' defer></script>
  </head>
  <body>
-  <h1>WebChat</h1>
+  <div class='errors'>
+  " . $errors . "
+  </div>
+  <h1>" . htmlspecialchars($config["chatName"]) . "</h1>
   <div id='chat'>
     " . $content . "
   </div>
   <div class='msgbox'>
-  <form method='post'>
-    <input type='username' name='name' value='" . htmlspecialchars($_SESSION["name"]) . "' maxlength='32' required>
-    <input type='text' name='message' maxlength='2048' autofocus required>
+  <form method='post' autocomplete='off'>
+    <input type='username' class='namebox' name='name' value='" . htmlspecialchars($_SESSION["name"]) . "' maxlength='32' required>
+    <input type='text' class='textbox' name='message' maxlength='2048' autofocus required>
     <input type='submit' value='Send'>
   </form>
   </div>

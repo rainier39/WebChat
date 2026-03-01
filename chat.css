@@ -1,3 +1,16 @@
-.msg {border: 1px solid black; margin: 4px; padding: 4px; overflow-wrap: break-word}
-#chat {height: 80%; width: 98%; overflow-y: scroll; position: fixed}
-.msgbox {position: fixed; bottom: 12px}
+/* Main page */
+.msg {border: 1px solid black; margin: 2px; padding: 4px; overflow-wrap: break-word}
+#chat {max-height: 82vh; width: 99vw; overflow-y: scroll; position: fixed; bottom: 5vh}
+.msgbox {position: fixed; bottom: 1vh; width: 98vw; display: inline-block; box-sizing: border-box}
+.namebox {width: 160px}
+.textbox {width: calc(100% - 160px - 70px)}
+
+/* Error stuff */
+.errors {top: 4px; left: 4px; right: 4px; position: fixed}
+.error {border: 1px solid darkred; background: #ff6666; padding: 4px; margin: 4px; animation: seconds 5.0s forwards; animation-iteration-count: 1; animation-delay: 5s; position: relative}
+@keyframes seconds {0% {opacity: 1} 100% {opacity:0; zindex: -10}}
+
+/** Phone/Tablet **/
+@media only screen and (max-width: 768px) {
+#chat {max-height: 80vh; width: 96vw}
+}

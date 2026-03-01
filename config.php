@@ -17,14 +17,16 @@
  */
 
 // config.php
-// Stores the database credentials.
+// Stores the database credentials and configuration.
 
 // These must be filled in manually.
 $config = array(
   "SQLHost" => "localhost",
   "SQLUser" => "",
   "SQLPass" => "",
-  "SQLDB" => ""
+  "SQLDB" => "",
+  "maxMessages" => 200,
+  "chatName" => "WebChat"
 );
 
 ?>
