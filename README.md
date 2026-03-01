@@ -5,4 +5,4 @@ As of current, this software may be used in production. It lacks rate limiting, 
 
 This is free software, I will develop it at my leisure. This is not one of my big projects so it won't likely be updated often. Contributions are welcome, however, and bug reports/feature suggestions will be considered.
 
-Has only been tested with Apache2 on Debian 13. More detailed version information to be posted. Should work on various HTTP server software, on at least most Linux distributions if not most OSes.
+Has only been tested with Apache2 on Debian 13. More detailed version information to be posted. It should work on various HTTP server software, and on at least most Linux distributions if not most OSes.
