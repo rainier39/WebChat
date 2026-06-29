@@ -19,17 +19,39 @@
 // index.php
 // Main page for the application.
 
+function render() {
+  global $config, $errors, $content;
+  // Serve the HTML document.
+  // The JavaScript is defered so that it is executed after the page has been parsed.
+  echo("<!DOCTYPE html>
+  <html lang='en-US'>
+   <head>
+    <meta charset='UTF-8'>
+    <title>" . htmlspecialchars($config["chatName"]) . "</title>
+    <meta name='viewport' content='width=device-width,initial-scale=1'>
+    <link rel='stylesheet' href='chat.css'>
+    <script src='chat.js' defer></script>
+   </head>
+   <body>
+    <div class='errors'>
+    " . $errors . "
+    </div>
+    <h1>" . htmlspecialchars($config["chatName"]) . "</h1>
+    <div id='chat'>
+      " . $content . "
+    </div>
+    <div class='msgbox'>
+    <form method='post' autocomplete='off'>
+      <input type='username' class='namebox' name='name' value='" . htmlspecialchars($_SESSION["name"]) . "' maxlength='32' required>
+      <input type='text' class='textbox' name='message' maxlength='2048' autofocus required>
+      <input type='submit' value='Send'>
+    </form>
+    </div>
+   </body>
+  </html>");
+}
+
 require("config.php");
-
-$db = mysqli_connect($config["SQLHost"], $config["SQLUser"], $config["SQLPass"], $config["SQLDB"]);
-
-$db->query("CREATE TABLE IF NOT EXISTS `messages` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `content` varchar(2048) DEFAULT NULL,
-  `mtime` bigint NOT NULL,
-  `name` varchar(32) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
 session_name("WebChat");
 session_start([
@@ -41,6 +63,29 @@ session_start([
 $_SESSION["name"] = $_SESSION["name"] ?? "user" . rand(1000, 9999);
 
 $errors = "";
+
+if (($config["SQLUser"] == "") or ($config["SQLPass"] == "") or ($config["SQLDB"] == "")) {
+  $errors = "<div class='error_persistent'>Please fill out the config.</div>";
+  render();
+  exit();
+}
+
+try {
+  $db = mysqli_connect($config["SQLHost"], $config["SQLUser"], $config["SQLPass"], $config["SQLDB"]);
+}
+catch (Exception $e) {
+  $errors = "<div class='error_persistent'>Database Connection Error: " . $e->getMessage() . "</div>";
+  render();
+  exit();
+}
+
+$db->query("CREATE TABLE IF NOT EXISTS `messages` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `content` varchar(2048) DEFAULT NULL,
+  `mtime` bigint NOT NULL,
+  `name` varchar(32) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
   if (isset($_POST["message"]) and isset($_POST["name"])) {
@@ -76,33 +121,6 @@ while ($r = $result->fetch_assoc()) {
   $content = "<div class='msg'>" . htmlspecialchars($r["name"]) . ": " . htmlspecialchars($r["content"]) . "</div>" . $content;
 }
 
-// Serve the HTML document.
-// The JavaScript is defered so that it is executed after the page has been parsed.
-echo("<!DOCTYPE html>
-<html lang='en-US'>
- <head>
-  <meta charset='UTF-8'>
-  <title>" . htmlspecialchars($config["chatName"]) . "</title>
-  <meta name='viewport' content='width=device-width,initial-scale=1'>
-  <link rel='stylesheet' href='chat.css'>
-  <script src='chat.js' defer></script>
- </head>
- <body>
-  <div class='errors'>
-  " . $errors . "
-  </div>
-  <h1>" . htmlspecialchars($config["chatName"]) . "</h1>
-  <div id='chat'>
-    " . $content . "
-  </div>
-  <div class='msgbox'>
-  <form method='post' autocomplete='off'>
-    <input type='username' class='namebox' name='name' value='" . htmlspecialchars($_SESSION["name"]) . "' maxlength='32' required>
-    <input type='text' class='textbox' name='message' maxlength='2048' autofocus required>
-    <input type='submit' value='Send'>
-  </form>
-  </div>
- </body>
-</html>");
+render();
 
 ?>
